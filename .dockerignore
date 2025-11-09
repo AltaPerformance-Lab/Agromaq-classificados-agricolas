@@ -1,0 +1,14 @@
+# Ficheiros e pastas relacionados com o Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Dependências do Node.js (serão instaladas dentro do contentor)
+node_modules
+
+# Pasta de build do Next.js (será gerada dentro do contentor)
+.next
+
+# Ficheiros de log e ambiente local
+npm-debug.log*
+*.env.local

@@ -1,0 +1,31 @@
+# Dependências
+/node_modules
+
+# Arquivos de Build e Cache
+/.next/
+/build/
+/out/
+*.tsbuildinfo
+
+# Variáveis de Ambiente (CRUCIAL)
+# Ignora .env, .env.local, .env.production, etc.
+.env*
+!.env.example
+
+# Pasta de Imagens (CRUCIAL para o AgroMaq)
+# Não queremos enviar as imagens de teste locais para o GitHub
+/public/uploads/
+
+# Logs de Erro e Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Arquivos de Sistema Operacional
+.DS_Store
+*.pem
+
+# Arquivos de Controle Pessoal (Seu Pedido)
+z_dossie.txt
+zz_dossie.txt

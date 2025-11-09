@@ -1,0 +1,43 @@
+services:
+  # Serviço da aplicação Next.js (sem alterações, apenas a dependência)
+  app:
+    build: .
+    container_name: agromaq-app
+    ports:
+      - "3001:3000"
+    volumes:
+      # Sincroniza o seu código local com o contentor para desenvolvimento
+      - .:/app
+      # Isola a pasta node_modules
+      - /app/node_modules
+    depends_on:
+      db:
+        # A condição de "service_healthy" agora vai usar o novo healthcheck do Postgres
+        condition: service_healthy
+    env_file:
+      - .env
+
+  # --- MUDANÇA PRINCIPAL: Serviço do banco de dados PostgreSQL ---
+  db:
+    image: postgres:15 # <-- MUDANÇA: Imagem atualizada
+    container_name: agromaq-db # <-- MUDANÇA: (Opcional) Renomeei para clareza
+    ports:
+      # A porta padrão do Postgres é 5432. 
+      # Mapeei a 5433 no seu host para evitar conflitos, assim como você fez com a 3307.
+      - "5435:5432" # <-- MUDANÇA: Portas
+    healthcheck:
+      # --- MUDANÇA: Healthcheck para Postgres ---
+      test: ["CMD", "pg_isready", "-h", "localhost", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    env_file:
+      - .env
+    volumes:
+      # --- MUDANÇA: Caminho do volume do Postgres ---
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  # --- MUDANÇA: Nome do volume ---
+  postgres-data:

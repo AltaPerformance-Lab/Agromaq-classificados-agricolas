@@ -1,0 +1,313 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  // ATUALIZAÇÃO: Removido 'previewFeatures = ["fullTextIndex"]' (era específico do MySQL)
+}
+
+datasource db {
+  provider = "postgresql" // ATUALIZAÇÃO: Confirmado para PostgreSQL
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int                   @id @default(autoincrement())
+  name               String
+  email              String                @unique
+  phone              String                @unique
+  password           String
+  role               UserRole              @default(USER)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  anunciosMaquina    AnuncioMaquina[]
+  anunciosFazenda    AnuncioFazenda[]
+  alertasBusca       AlertaBusca[]
+  posts              Post[] // Artigos escritos pelo utilizador (se for admin)
+  postInteractions   UserPostInteraction[] // Interações do utilizador com os artigos
+  isVerified         Boolean               @default(false)
+  activityLogs       ActivityLog[]
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model AnuncioMaquina {
+  id                   Int               @id @default(autoincrement())
+  slug                 String            @unique
+  userId               Int
+  user                 User              @relation(fields: [userId], references: [id])
+  nome                 String
+  preco                BigInt
+  tipo                 String
+  marca                String
+  ano                  Int
+  horas                Int
+  estado               String
+  cidade               String
+  descricao            String?           @db.Text
+  informacoes_adicionais String?           @db.Text
+  condicao             String?
+  potencia_motor       String?
+  transmissao          String?
+  tracao               String?
+  cabine               String?
+  operacao_previa      String?
+  condicao_pneus       String?
+  pneus_dianteiros     String?
+  pneus_traseiros      String?
+  ar_condicionado      Boolean           @default(false)
+  lamina_frontal       Boolean           @default(false)
+  carregador_frontal   Boolean           @default(false)
+  gps                  Boolean           @default(false)
+  piloto_automatico    Boolean           @default(false)
+  unico_dono           Boolean           @default(false)
+  status               AnuncioStatus     @default(ATIVO)
+  suspensionReason     String?           @db.Text
+  deletedAt            DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  imagens              AnuncioImagem[]
+
+  @@index([userId])
+  @@index([status, deletedAt, tipo, marca, estado])
+  @@index([preco])
+  @@index([ano])
+  @@index([horas])
+  // ATUALIZAÇÃO: Removido '@@fulltext([nome])' (era específico do MySQL)
+}
+
+model AnuncioImagem {
+  id           Int            @id @default(autoincrement())
+  anuncioId    Int
+  anuncio      AnuncioMaquina @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+  url          String
+  thumbnailUrl String
+  isPrincipal  Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+
+  @@index([anuncioId])
+}
+
+model AnuncioFazenda {
+  id                       Int                    @id @default(autoincrement())
+  slug                     String                 @unique
+  userId                   Int
+  user                     User                   @relation(fields: [userId], references: [id])
+  titulo                   String
+  preco                    BigInt
+  estado                   String
+  cidade                   String
+  
+  // ATUALIZAÇÃO: Trocado 'Float' por 'Decimal' para precisão
+  area_total_hectares      Decimal                @db.Decimal(10, 2)
+  area_pastagem_hectares   Decimal?               @db.Decimal(10, 2)
+  area_lavoura_hectares    Decimal?               @db.Decimal(10, 2)
+  area_reserva_hectares    Decimal?               @db.Decimal(10, 2)
+
+  tipo_solo                String?
+  topografia               String?
+  possui_casa_sede         Boolean                @default(false)
+  possui_curral            Boolean                @default(false)
+  possui_recursos_hidricos Boolean                @default(false)
+  descricao                String?                @db.Text
+  benfeitorias             String?                @db.Text
+  status                   AnuncioStatus          @default(ATIVO)
+  suspensionReason         String?                @db.Text
+  deletedAt                DateTime?
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  imagens                  AnuncioImagemFazenda[]
+
+  @@index([userId])
+  @@index([status, deletedAt, estado, cidade])
+  @@index([preco])
+  @@index([area_total_hectares])
+  // ATUALIZAÇÃO: Removido '@@fulltext([titulo, cidade, estado])' (era específico do MySQL)
+}
+
+model AnuncioImagemFazenda {
+  id           Int            @id @default(autoincrement())
+  anuncioId    Int
+  anuncio      AnuncioFazenda @relation(fields: [anuncioId], references: [id], onDelete: Cascade)
+  url          String
+  thumbnailUrl String
+  isPrincipal  Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+
+  @@index([anuncioId])
+}
+
+model AlertaBusca {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  nome      String
+  filtros   Json
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum AnuncioStatus {
+  ATIVO
+  PAUSADO
+  VENDIDO
+  SUSPENSO
+}
+
+// --- NOVOS MODELOS PARA O BLOG E FUNCIONALIDADES DE ENGAJAMENTO ---
+
+model Post {
+  id                 Int                   @id @default(autoincrement())
+  slug               String                @unique
+  title              String
+  excerpt            String                @db.Text
+  content            Json
+  imageUrl           String
+  viewCount          Int                   @default(0)
+  status             PostStatus            @default(DRAFT)
+  authorId           Int
+  author             User                  @relation(fields: [authorId], references: [id])
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  publishedAt        DateTime?
+  userInteractions   UserPostInteraction[]
+
+  @@index([authorId])
+  @@index([status, publishedAt])
+  // ATUALIZAÇÃO: Removido '@@fulltext([title, excerpt])' (era específico do MySQL)
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// Modelo para gerir as interações dos utilizadores com os posts
+model UserPostInteraction {
+  userId      Int
+  postId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  isFavorite  Boolean  @default(false)
+  isReadLater Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@id([userId, postId]) // Garante que um utilizador só tem uma linha de interação por post
+  @@index([userId])
+  @@index([postId])
+}
+
+// Modelo para guardar as cotações de commodities
+model CommodityPrice {
+  id        String   @id // Ex: 'BOI_GORDO', 'SOJA'
+  name      String   // Ex: 'Boi Gordo', 'Soja'
+  
+  // ATUALIZAÇÃO: Trocado 'Float' por 'Decimal' para precisão
+  price     Decimal  @db.Decimal(10, 2)
+  variation Decimal  @db.Decimal(10, 2)
+  
+  updatedAt DateTime @updatedAt
+}
+
+// --- NOVOS MODELOS PARA O SISTEMA DE PUBLICIDADE ---
+
+// Define os locais pré-definidos onde os anúncios podem aparecer
+model AdPlacement {
+  id          String @id @unique // Ex: 'HOME_TOP_BANNER', 'BLOG_SIDEBAR'
+  name        String // Ex: "Banner no Topo da Home"
+  description String?
+  ads         Ad[]
+}
+
+// O anunciante que está a pagar pela publicidade
+model Advertiser {
+  id           Int    @id @default(autoincrement())
+  name         String
+  contactEmail String @unique
+  ads          Ad[]
+}
+
+// O anúncio em si, com todos os seus detalhes e métricas
+model Ad {
+  id             Int         @id @default(autoincrement())
+  title          String // Para referência interna
+  status         AdStatus    @default(INACTIVE)
+  imageUrl       String // Imagem para desktop
+  mobileImageUrl String? // Imagem opcional para mobile
+  targetUrl      String // O link para onde o anúncio aponta
+  startDate      DateTime?
+  endDate        DateTime?
+  viewCount      Int         @default(0)
+  clickCount     Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  advertiserId   Int
+  advertiser     Advertiser  @relation(fields: [advertiserId], references: [id])
+  placementId    String
+  placement      AdPlacement @relation(fields: [placementId], references: [id])
+
+  @@index([advertiserId])
+  @@index([placementId])
+  @@index([status, startDate, endDate])
+}
+
+enum AdStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+// --- ATUALIZAÇÃO: Renomeado de AdminActionType para ActivityType e adicionadas novas ações ---
+enum ActivityType {
+  // Ações do Utilizador
+  CREATE_AD
+  EDIT_AD
+  PAUSE_AD
+  REACTIVATE_AD_USER // Reativado pelo próprio utilizador
+  DELETE_AD_LOGICAL
+
+  // Ações do Administrador
+  SUSPEND_AD
+  REACTIVATE_AD_ADMIN // Reativado por um admin
+  DELETE_AD_PERMANENT
+  ADMIN_EDIT_AD
+  DELETE_AD_IMAGE     // <<< ADICIONADO AQUI
+  PROMOTE_AD
+  VERIFY_AD
+  EDIT_USER
+  DELETE_USER
+  ADD_CREDITS
+  CREATE_BLOG_POST
+  EDIT_BLOG_POST
+  DELETE_BLOG_POST
+}
+
+// --- ATUALIZAÇÃO: Renomeado de AdminLog para ActivityLog ---
+// Esta tabela irá agora registar ações de utilizadores e administradores
+model ActivityLog {
+  id         Int          @id @default(autoincrement())
+  timestamp  DateTime     @default(now())
+
+  // O "ator" que realizou a ação (pode ser um User ou um Admin)
+  actorId    Int
+  actorName  String
+  actor      User         @relation(fields: [actorId], references: [id])
+
+  action     ActivityType
+
+  targetType String? // Ex: "AnuncioMaquina", "User"
+  targetId   String? // O ID do registo afetado
+
+  reason     String?      @db.Text
+  details    Json? // Detalhes como "antes" e "depois"
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType, targetId])
+}
