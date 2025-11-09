@@ -11,6 +11,7 @@
 # Ignora .env, .env.local, .env.production, etc.
 .env*
 !.env.example
+railway.toml
 
 # Pasta de Imagens (CRUCIAL para o AgroMaq)
 # Não queremos enviar as imagens de teste locais para o GitHub
