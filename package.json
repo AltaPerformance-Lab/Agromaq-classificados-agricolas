@@ -17,7 +17,7 @@
     "@editorjs/quote": "^2.7.6",
     "@headlessui/react": "^2.2.8",
     "@heroicons/react": "^2.2.0",
-    "@prisma/client": "5.17.0",
+    "@prisma/client": "5.15.1",
     "bcrypt": "^6.0.0",
     "chart.js": "^4.5.0",
     "date-fns": "^4.1.0",
@@ -39,7 +39,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.4",
     "postcss": "^8.4.39",
-    "prisma": "5.17.0",
+    "prisma": "5.15.1",
     "tailwindcss": "^3.4.4"
   },
   "prisma": {
