@@ -12,6 +12,12 @@ const nextConfig = {
         port: '',
         pathname: '/**', // Permite qualquer imagem da sua conta
       },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co', // A permissão para o fallback
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   // --- FIM DO BLOCO ---

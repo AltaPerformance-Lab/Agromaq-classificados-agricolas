@@ -8,6 +8,8 @@ const prisma = new PrismaClient();
 // Helper para aplicar transformações do Cloudinary
 const applyTransforms = (url, main = true) => {
   const transform = main ? 'c_fill,h_600,w_800' : 'c_fill,h_300,w_400';
+  // Adiciona a transformação logo após /upload/
+  // Ex: .../upload/v123... -> .../upload/c_fill,h_600,w_800/v123...
   return url.replace('/upload/', `/upload/${transform}/`);
 };
 
@@ -31,15 +33,18 @@ const pulverizadorStaraImages = [
 const fazendaImages1 = [
   { url: applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762724575/cenario-de-produtos-naturais-fazenda-e-luz-solar_baaoop.jpg'), thumbnailUrl: applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762724575/cenario-de-produtos-naturais-fazenda-e-luz-solar_baaoop.jpg', false), isPrincipal: true },
   { url: applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762725053/fazendas-1024x620.jpg_lpmb7f.webp'), thumbnailUrl: applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762725053/fazendas-1024x620.jpg_lpmb7f.webp', false), isPrincipal: false },
-  { url: applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762725053/meliponario_qen7m2.jpg'), thumbnailUrl: applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762725053/meliponario_qen7m2.jpg', false), isPrincipal: false },
+];
+
+// --- AQUI ESTÁ A CORREÇÃO ---
+// A variável que estava faltando e causando o erro 'ReferenceError'
+const fazendaImages2 = [
+  { url: applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762725053/meliponario_qen7m2.jpg'), thumbnailUrl: applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762725053/meliponario_qen7m2.jpg', false), isPrincipal: true },
   { url: applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762725053/casarao-historico_stkz80.jpg'), thumbnailUrl: applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762725053/casarao-historico_stkz80.jpg', false), isPrincipal: false },
 ];
-// (Vamos usar o mesmo set de imagens para as outras fazendas, só para popular)
+
 
 // --- FUNÇÕES AUXILIARES (Sem mudanças) ---
-
 const htmlToEditorJs = (html) => {
-  // ... (Sua função original)
   const blocks = html.trim().split('\n').map(line => {
     if (line.startsWith('<h2>')) {
       return { type: 'header', data: { text: line.replace(/<\/?h2>/g, ''), level: 2 } };
@@ -62,7 +67,6 @@ const htmlToEditorJs = (html) => {
 };
 
 async function getInitialDolarPrice() {
-  // ... (Sua função original)
   try {
     const response = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL');
     if (!response.ok) return 5.45;
@@ -74,7 +78,7 @@ async function getInitialDolarPrice() {
   }
 }
 
-// --- FUNÇÕES DE SEED MODULARES (Atualizadas) ---
+// --- FUNÇÕES DE SEED MODULARES (Sem mudanças) ---
 
 async function clearDatabase() {
   console.log('A limpar a base de dados...');
@@ -129,7 +133,6 @@ async function seedCommodities() {
 
 async function seedPosts(adminUser) {
   console.log('A criar artigos do blog...');
-  // ATUALIZAÇÃO: Usei as imagens de fazenda como placeholders para os posts
   const postImages = [
     applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762725053/fazendas-1024x620.jpg_lpmb7f.webp', true),
     applyTransforms('https://res.cloudinary.com/ddbhf4qut/image/upload/v1762724575/cenario-de-produtos-naturais-fazenda-e-luz-solar_baaoop.jpg', true),
@@ -152,9 +155,9 @@ async function seedMaquinas(users) {
   const maquinasData = [
     { data: { nome: 'Trator Valtra A950', slug: 'trator-valtra-a950', preco: BigInt('15000000'), tipo: 'Trator', marca: 'Valtra', ano: 2021, horas: 1800, estado: 'RS', cidade: 'Passo Fundo', status: 'ATIVO', user: { connect: { id: users.user1.id } } }, images: tratorValtraImages },
     { data: { nome: 'Pulverizador Stara Imperador', slug: 'pulverizador-stara-imperador', preco: BigInt('65000000'), tipo: 'Pulverizador', marca: 'Stara', ano: 2023, horas: 500, estado: 'BA', cidade: 'Luís Eduardo Magalhães', status: 'ATIVO', user: { connect: { id: users.user2.id } } }, images: pulverizadorStaraImages },
-    { data: { nome: 'Trator Massey Ferguson 4292', slug: 'trator-massey-ferguson-4292', preco: BigInt('12000000'), tipo: 'Trator', marca: 'Massey Ferguson', ano: 2019, horas: 3200, estado: 'SC', cidade: 'Chapecó', status: 'PAUSADO', user: { connect: { id: users.user3.id } } }, images: tratorValtraImages }, // Reutilizando imagens para poluir
+    { data: { nome: 'Trator Massey Ferguson 4292', slug: 'trator-massey-ferguson-4292', preco: BigInt('12000000'), tipo: 'Trator', marca: 'Massey Ferguson', ano: 2019, horas: 3200, estado: 'SC', cidade: 'Chapecó', status: 'PAUSADO', user: { connect: { id: users.user3.id } } }, images: tratorValtraImages },
     { data: { nome: 'Plantadeira John Deere DB40', slug: 'plantadeira-john-deere-db40', preco: BigInt('32000000'), tipo: 'Plantadeira', marca: 'John Deere', ano: 2022, horas: 900, estado: 'GO', cidade: 'Jataí', status: 'ATIVO', user: { connect: { id: users.adminUser.id } } }, images: plantadeiraImages },
-    { data: { nome: 'Caminhão Scania R450', slug: 'caminhao-scania-r450', preco: BigInt('55000000'), tipo: 'Cavalo Mecânico', marca: 'Scania', ano: 2020, horas: 150000, estado: 'SP', cidade: 'São Paulo', status: 'SUSPENSO', suspensionReason: 'Documentação pendente de verificação.', user: { connect: { id: users.user5.id } } }, images: tratorValtraImages }, // Reutilizando
+    { data: { nome: 'Caminhão Scania R450', slug: 'caminhao-scania-r450', preco: BigInt('55000000'), tipo: 'Cavalo Mecânico', marca: 'Scania', ano: 2020, horas: 150000, estado: 'SP', cidade: 'São Paulo', status: 'SUSPENSO', suspensionReason: 'Documentação pendente de verificação.', user: { connect: { id: users.user5.id } } }, images: tratorValtraImages },
   ];
   
   let createdMaquinas = [];
@@ -162,7 +165,7 @@ async function seedMaquinas(users) {
     const anuncio = await prisma.anuncioMaquina.create({
       data: {
         ...item.data,
-        imagens: { create: item.images } // <-- ATUALIZADO para usar as listas de imagens
+        imagens: { create: item.images }
       }
     });
     createdMaquinas.push(anuncio);
@@ -174,10 +177,11 @@ async function seedMaquinas(users) {
 async function seedFazendas(users) {
   console.log('A criar anúncios de fazendas...');
   const fazendasData = [
+    // ATUALIZAÇÃO: A referência a 'fazendaImages2' agora funciona
     { data: { titulo: 'Fazenda a 100km de Itumbiara', slug: 'fazenda-proxima-a-itumbiara', preco: BigInt('1200000000'), estado: 'GO', cidade: 'Itumbiara', area_total_hectares: 1200, status: 'ATIVO', user: { connect: { id: users.adminUser.id } } }, images: fazendaImages1 },
-    { data: { titulo: 'Terra para Pasto em Mato Grosso', slug: 'terra-pasto-mato-grosso', preco: BigInt('800000000'), estado: 'MT', cidade: 'Cuiabá', area_total_hectares: 1000, status: 'ATIVO', user: { connect: { id: users.user2.id } } }, images: fazendaImages1.slice(1, 4) }, // Reutilizando
-    { data: { titulo: 'Sítio com Casa Sede em Minas Gerais', slug: 'sitio-casa-sede-minas-gerais', preco: BigInt('150000000'), estado: 'MG', cidade: 'Uberaba', area_total_hectares: 80, status: 'PAUSADO', user: { connect: { id: users.user3.id } } }, images: fazendaImages1.slice(2, 5) }, // Reutilizando
-    { data: { titulo: 'Fazenda de Café no Sul de Minas', slug: 'fazenda-cafe-sul-de-minas', preco: BigInt('2500000000'), estado: 'MG', cidade: 'Varginha', area_total_hectares: 300, status: 'SUSPENSO', suspensionReason: 'Anúncio duplicado.', user: { connect: { id: users.user4.id } } }, images: fazendaImages1.slice(0, 3) }, // Reutilizando
+    { data: { titulo: 'Terra para Pasto em Mato Grosso', slug: 'terra-pasto-mato-grosso', preco: BigInt('800000000'), estado: 'MT', cidade: 'Cuiabá', area_total_hectares: 1000, status: 'ATIVO', user: { connect: { id: users.user2.id } } }, images: fazendaImages2 },
+    { data: { titulo: 'Sítio com Casa Sede em Minas Gerais', slug: 'sitio-casa-sede-minas-gerais', preco: BigInt('150000000'), estado: 'MG', cidade: 'Uberaba', area_total_hectares: 80, status: 'PAUSADO', user: { connect: { id: users.user3.id } } }, images: fazendaImages1.slice(1) },
+    { data: { titulo: 'Fazenda de Café no Sul de Minas', slug: 'fazenda-cafe-sul-de-minas', preco: BigInt('2500000000'), estado: 'MG', cidade: 'Varginha', area_total_hectares: 300, status: 'SUSPENSO', suspensionReason: 'Anúncio duplicado.', user: { connect: { id: users.user4.id } } }, images: fazendaImages2.slice(1) },
   ];
 
   let createdFazendas = [];
@@ -185,7 +189,7 @@ async function seedFazendas(users) {
     const anuncio = await prisma.anuncioFazenda.create({
       data: {
         ...item.data,
-        imagens: { create: item.images } // <-- ATUALIZADO para usar as listas de imagens
+        imagens: { create: item.images }
       }
     });
     createdFazendas.push(anuncio);

@@ -1,19 +1,24 @@
+// middleware.js (VERSÃO CORRIGIDA E POLIDA)
 import { getToken } from 'next-auth/jwt';
 import { NextResponse } from 'next/server';
 
 export async function middleware(request) {
     const { pathname } = request.nextUrl;
 
-    // Defina aqui as rotas que são públicas e não precisam de login
+    // --- CORREÇÃO 1: Adicionamos as rotas de conteúdo ---
+    // Estas são as rotas que um visitante (não logado) pode ver.
     const publicRoutes = [
         '/', // Página Inicial
         '/login',
         '/register',
-        '/api/users', // API para criar utilizadores
+        '/blog', // Permite /blog e /blog/[slug]
+        '/anuncio', // Permite /anuncio/maquina/[slug] e /anuncio/fazenda/[slug]
+        '/fazendas', // Permite a página de listagem /fazendas (se existir)
     ];
 
-    // Verifica se a rota atual é uma das rotas públicas
-    const isPublicRoute = publicRoutes.some(route => pathname === route);
+    // --- CORREÇÃO 2: Mudamos de "igual" (===) para "começa com" (startsWith) ---
+    // Isso permite que /anuncio/maquina/slug-teste seja pego por '/anuncio'
+    const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
     // Obtém o token de sessão do utilizador
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
@@ -21,14 +26,12 @@ export async function middleware(request) {
     // CASO 1: O utilizador NÃO está logado e tenta aceder a uma rota protegida
     if (!isPublicRoute && !token) {
         const loginUrl = new URL('/login', request.url);
-        // Adiciona a página que ele tentou aceder como callbackUrl
         loginUrl.searchParams.set('callbackUrl', pathname);
         return NextResponse.redirect(loginUrl);
     }
 
     // CASO 2: O utilizador ESTÁ logado e tenta aceder às páginas de login/registo
     if (token && (pathname === '/login' || pathname === '/register')) {
-        // Redireciona-o para o painel, pois ele já está autenticado
         return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
@@ -36,18 +39,10 @@ export async function middleware(request) {
     return NextResponse.next();
 }
 
-// --- CORREÇÃO ---
-// A configuração do 'matcher' foi atualizada para excluir explicitamente 
-// todas as rotas que começam com '/api/'.
+// O seu 'config.matcher' já está perfeito.
+// Ele executa o middleware em TUDO, exceto API, arquivos estáticos e imagens.
 export const config = {
     matcher: [
-        /*
-         * Corresponde a todos os caminhos, exceto os que são para:
-         * - Rotas da API (começam com /api/)
-         * - Ficheiros estáticos do Next.js (começam com /_next/static/)
-         * - Ficheiros de otimização de imagem do Next.js (começam com /_next/image/)
-         * - O favicon.ico
-         */
-        '/((?!api|_next/static|_next/image|favicon.ico).*)',
+      '/((?!api|_next/static|_next/image|favicon.ico).*)',
     ],
 };
